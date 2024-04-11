@@ -35,9 +35,12 @@ function Table() {
     setRow("")
   }
 
+  console.log(tableData)
+
   useEffect(() => {
     axios.get("http://localhost:3000").then((response: any) => {
       const rowData = response.data
+
       rowData.forEach((obj: any) => {
         if ("_id" in obj) {
           obj.id = obj._id
@@ -50,7 +53,7 @@ function Table() {
 
       setTableData(rowData)
     })
-  }, [open])
+  })
 
   const handleEditClick = (row: any) => {
     navigate("/form", { state: row })
@@ -73,10 +76,15 @@ function Table() {
     { field: "info", headerName: "Information" },
     { field: "price", headerName: "Price" },
 
-    { field: "stock", headerName: "Stock" },
+    {
+      field: "stock",
+      headerName: "Stock",
+    },
     {
       field: "image",
       headerName: "Image",
+      display: "flex",
+
       renderCell: (params) => {
         return (
           <div className="flex items-stretch justify-center ">
@@ -90,8 +98,34 @@ function Table() {
       align: "center",
     },
     {
+      display: "flex",
+      minWidth: 280,
+      field: "location",
+      headerName: "Loaction",
+      renderCell: (params) => {
+        const locationarr = params.row.location
+
+        return (
+          <ul key={params.row.id * 23}>
+            {locationarr.map((obj: any) => {
+              return (
+                <li key={params.row.id + "asdjbdas"}>
+                  <p>
+                    <b>City: </b>
+                    {obj.city} <b>State: </b>
+                    {obj.state}
+                  </p>{" "}
+                </li>
+              )
+            })}
+          </ul>
+        )
+      },
+    },
+    {
       field: "buttons",
       headerName: "Action",
+      display: "flex",
       renderCell: (params) => {
         return (
           <div className="flex flex-row justify-start gap-3">
@@ -144,6 +178,7 @@ function Table() {
           }
         >
           <DataGrid
+            getCellClassName={() => `text-center`}
             disableColumnSelector
             disableMultipleRowSelection
             disableRowSelectionOnClick

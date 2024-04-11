@@ -29,6 +29,7 @@ const storage = multer.diskStorage({
     cb(null, file.originalname)
   },
 })
+type location1 = [{ city: string; state: string }]
 
 const upload = multer({ storage: storage })
 const PORT = process.env.PORT || 3000
@@ -40,6 +41,7 @@ const dataSchema = new mongoose.Schema({
   price: Number,
   stock: Number,
   image: String,
+  location: Array<location1>,
 })
 
 const items = mongoose.model("items", dataSchema)
@@ -55,29 +57,38 @@ app.get("/", async (req: Request, res: Response) => {
   res.status(200).json(data)
   // console.log(data)
 })
-app.post("/", upload.single("image"), (req: Request | any, res: Response) => {
-  const { productid, productname, category, info, price, stock } = req.body
+app.post(
+  "/",
+  upload.single("image"),
+  async (req: Request | any, res: Response) => {
+    const { productid, productname, category, info, price, stock, location } =
+      req.body
 
-  const image = req.file
+    const image = req.file
 
-  try {
-    items
-      .create({
-        productid: productid,
-        productname: productname,
-        category: category,
-        info: info,
-        price: price,
-        stock: stock,
-        image: image.originalname,
-      })
-      .then(() => {
-        res.status(201).json({ message: "Data Stored" })
-      })
-  } catch (err) {
-    res.status(500).json({ message: "Server Error" })
+    try {
+      await items
+        .create({
+          productid: productid,
+          productname: productname,
+          category: category,
+          info: info,
+          price: price,
+          stock: stock,
+          image: image.originalname,
+          location: location,
+        })
+        .then(() => {
+          res.status(201).json({ message: "Data Stored" })
+        })
+        .catch((error) => {
+          res.status(20).json({ message: "Daata Not stored Try Again" })
+        })
+    } catch (error) {
+      res.status(500).json({ message: "Server Error" })
+    }
   }
-})
+)
 
 app.patch(
   "/:id",
@@ -85,7 +96,8 @@ app.patch(
   async (req: Request, res: Response) => {
     try {
       const id = req.params.id
-      const { productid, productname, category, info, price, stock } = req.body
+      const { productid, productname, category, info, price, stock, location } =
+        req.body
       const doc: any = await items.findById(id)
       doc.productid = productid
       doc.productname = productname
@@ -93,6 +105,7 @@ app.patch(
       doc.info = info
       doc.price = price
       doc.stock = stock
+      doc.location = location
 
       //@ts-ignore
       if (req.file) {
@@ -101,6 +114,8 @@ app.patch(
         if (image.originalname !== doc.image) {
           doc.image = image.originalname
         }
+      } else {
+        return
       }
       doc.save()
 
@@ -118,6 +133,7 @@ app.delete("/:id", async (req: Request, res: Response) => {
   try {
     await items.findByIdAndDelete(id).then((data: any) => {
       const imgname = data?.image
+
       fs.unlinkSync(`../Photos/${imgname}`)
 
       res.status(204).json({ message: "Data Deleted" })

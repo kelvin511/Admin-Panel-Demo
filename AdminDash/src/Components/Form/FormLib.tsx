@@ -4,15 +4,20 @@
 // Light #8EA8C3
 // Lightest #CBF7ED
 
-import { SubmitHandler, useForm } from "react-hook-form"
-import Joi from "joi"
+import {
+  SubmitHandler,
+  useForm,
+  useFieldArray,
+  Controller,
+} from "react-hook-form"
+import Joi, { string } from "joi"
 import { joiResolver } from "@hookform/resolvers/joi"
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { serialize } from "object-to-formdata"
 import axios from "axios"
 import { ToastContainer, toast, Flip } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
-import { NavLink } from "react-router-dom"
+import { NavLink, useNavigate } from "react-router-dom"
 import { useLocation } from "react-router-dom"
 
 //* JOI SCHEMA ///////////////////////////////////////////////////////////////
@@ -25,6 +30,14 @@ const schema = Joi.object({
   price: Joi.number().required(),
   image: Joi.any().required(),
   stock: Joi.number().required(),
+  location: Joi.array()
+    .items(
+      Joi.object().keys({
+        city: Joi.string().required(),
+        state: Joi.string().required(),
+      })
+    )
+    .min(1),
 })
 
 //* TYPE OF FORM INPUTS ///////////////////////////////////////////////////////////////
@@ -37,6 +50,7 @@ type FormFields = {
   info: string
   price: number | string
   stock: number | string
+  location: { city: string; state: string }[]
 }
 
 //* REACT FUNCTION COMPONENT //////////////////////////////////////////////////////////
@@ -44,10 +58,43 @@ type FormFields = {
 function FormLib() {
   const [fileUrl, setFileUrl] = useState<any>() //* FILE URL TO PREVIEW
   const [imgError, setImgError] = useState<any>(false) //*image error for validation
+  const [locError, setLocError] = useState<any>([])
+  const [index1, setIndex1] = useState<any>([])
 
   const imageRef = useRef<any>(null)
   const previewRef = useRef<any>(null)
   const location = useLocation()
+  const navigate = useNavigate()
+  const {
+    control,
+    setError,
+    getValues,
+    reset,
+    register,
+    setValue,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<FormFields>({
+    defaultValues: {
+      productid: "",
+      productname: "",
+      category: "",
+      info: "",
+      price: "",
+      stock: "",
+      image: "",
+      location: [{ city: "", state: "" }],
+    },
+    resolver: joiResolver(schema),
+  })
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "location",
+  })
+
+  const locationDelete = useCallback(() => {
+    append({ city: "", state: "" })
+  }, [])
 
   useEffect(() => {
     if (location.state !== null && location) {
@@ -71,21 +118,15 @@ function FormLib() {
       })
       setValue("stock", location.state.stock, {
         shouldValidate: true,
+        shouldTouch: true,
+      })
+      setValue("location", location.state.location, {
+        shouldTouch: true,
+        shouldValidate: true,
       })
       previewRef.current.src = `http://localhost:3000/${location.state.image}`
     }
   }, [])
-
-  const {
-    setError,
-    reset,
-    register,
-    setValue,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<FormFields>({
-    resolver: joiResolver(schema),
-  })
 
   const onChangeFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) {
@@ -113,8 +154,10 @@ function FormLib() {
     setFileUrl(URL.createObjectURL(image))
   }
   const sendData = async (data: FormFields) => {
-    const formData = serialize(data)
-    console.log(formData)
+    //@ts-ignore
+
+    //@ts-ignore
+    const formData = data
 
     try {
       await axios({
@@ -127,6 +170,7 @@ function FormLib() {
         headers: { "Content-Type": "multipart/form-data" },
       })
         .then(function (response) {
+          // setTimeout(() => navigate("/"), 2000)
           toast.success(`${response.data.message}`, {
             position: "bottom-right",
             autoClose: 2000,
@@ -138,8 +182,8 @@ function FormLib() {
             transition: Flip,
           })
         })
-        .catch(function (response) {
-          toast.error("Failed to submit data. Please try again later.", {
+        .catch((error) => {
+          toast.error(error as string, {
             position: "bottom-right",
             autoClose: 2000,
             hideProgressBar: true,
@@ -151,8 +195,7 @@ function FormLib() {
           })
         })
     } catch (error) {
-      console.error("Error:", error)
-      toast.error("Failed to submit data. Please try again later.", {
+      toast.error(`${error}`, {
         position: "bottom-right",
         autoClose: 2000,
         hideProgressBar: true,
@@ -165,34 +208,37 @@ function FormLib() {
     }
   }
 
-  const updateData = () => {}
-
   const onSubmit: SubmitHandler<FormFields> = (data) => {
-    sendData(data)
-    reset({
-      productid: "",
-      productname: "",
-      category: "",
-      info: "",
-      price: "",
-      stock: "",
-      image: "",
+    setLocError(errors.location)
+    let isEmpty = false
+    const locationarr = data.location.forEach((obj: any) => {
+      if (obj.city === "" || obj.state === "") isEmpty = true
     })
-    imageRef.current.value = ""
-    setFileUrl("")
+    console.log(locationarr)
+
+    console.log(data)
+    if (data.location.length > 0 && !isEmpty) {
+      sendData(data)
+      reset({
+        productid: "",
+        productname: "",
+        category: "",
+        info: "",
+        price: "",
+        stock: "",
+        image: "",
+        location: [{ city: "", state: "" }],
+      })
+      imageRef.current.value = ""
+      setFileUrl("")
+    } else {
+      console.log(errors)
+    }
   }
 
   return (
     <div className="flex justify-center my-2">
       <div className="w-1/2 p-10 text-xl text-[#23395B] bg-[#8EA8C3] rounded-xl">
-        <div className="flex justify-center mb-12">
-          <NavLink
-            to="/"
-            className=" text-center  p-2 bg-[#161925] text-[#CBF7ED] rounded-lg"
-          >
-            View Table
-          </NavLink>
-        </div>
         <form
           encType="multipart/form-data"
           onSubmit={handleSubmit(onSubmit)}
@@ -309,6 +355,57 @@ function FormLib() {
               </span>
             )}
           </div>
+
+          <div className="flex flex-col w-1/2">
+            <label className="mb-2" htmlFor="stock">
+              Location
+            </label>
+            <div>
+              {fields.map((field, index) => {
+                return (
+                  <div className="flex flex-row gap-4 my-5" key={field.id}>
+                    <input
+                      className="w-1/3 p-2 rounded-lg"
+                      type="text"
+                      id={`city${index}`}
+                      placeholder="City"
+                      {...register(`location.${index}.city` as const)}
+                    />
+                    <input
+                      className="w-1/3 p-2 rounded-lg"
+                      type="text"
+                      id={`state${index}`}
+                      placeholder="State"
+                      {...register(`location.${index}.state` as const)}
+                    />
+
+                    {index > 0 && (
+                      <button onClick={() => remove(index)}>Remove</button>
+                    )}
+                  </div>
+                )
+              })}
+
+              <button
+                type="button"
+                className="p-1 bg-[#23395B] text-[#CBF7ED] rounded-lg"
+                onClick={() => {
+                  append({ city: "", state: "" })
+                }}
+              >
+                Add
+              </button>
+            </div>
+            {errors.location
+              ? errors.location?.map((obj) => (
+                  <span className="text-[20px] text-red-700 ">
+                    {`Fields cannot be empty on order ${
+                      errors.location?.indexOf(obj) + 1
+                    }`}
+                  </span>
+                ))
+              : ""}
+          </div>
           <div className="flex flex-col w-1/2">
             <label className="mb-2" htmlFor="file">
               Image
@@ -336,28 +433,37 @@ function FormLib() {
 
             {<img ref={previewRef} src={fileUrl} />}
           </div>
-          {location.state === null ? (
-            <button
-              // disabled={isSubmitting}
-              className="p-2 bg-[#161925] text-[#CBF7ED] rounded-lg"
-              type="submit"
+          <div className="flex justify-center mb-12 gap-14">
+            {location.state === null ? (
+              <button
+                // disabled={isSubmitting}
+                className="p-2 bg-[#161925] text-[#CBF7ED] rounded-lg"
+                type="submit"
+              >
+                {isSubmitting ? "Saving..." : "Submit"}
+              </button>
+            ) : (
+              <button
+                // disabled={isSubmitting}
+                className="p-2 bg-[#161925] text-[#CBF7ED] rounded-lg"
+                type="submit"
+              >
+                {isSubmitting ? "Saving..." : "Update"}
+              </button>
+            )}
+            {errors.root && (
+              <span className="text-[20px] text-red-700 ">
+                {errors.root.message}
+              </span>
+            )}
+
+            <NavLink
+              to="/"
+              className=" text-center  p-2 bg-[#161925] text-[#CBF7ED] rounded-lg"
             >
-              {isSubmitting ? "Saving..." : "Submit"}
-            </button>
-          ) : (
-            <button
-              // disabled={isSubmitting}
-              className="p-2 bg-[#161925] text-[#CBF7ED] rounded-lg"
-              type="submit"
-            >
-              {isSubmitting ? "Saving..." : "Update"}
-            </button>
-          )}
-          {errors.root && (
-            <span className="text-[20px] text-red-700 ">
-              {errors.root.message}
-            </span>
-          )}
+              Go Back
+            </NavLink>
+          </div>
         </form>
       </div>
       <ToastContainer
