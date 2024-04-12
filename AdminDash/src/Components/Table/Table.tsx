@@ -35,8 +35,6 @@ function Table() {
     setRow("")
   }
 
-  console.log(tableData)
-
   useEffect(() => {
     axios.get("http://localhost:3000").then((response: any) => {
       const rowData = response.data
@@ -53,7 +51,7 @@ function Table() {
 
       setTableData(rowData)
     })
-  })
+  }, [open])
 
   const handleEditClick = (row: any) => {
     navigate("/form", { state: row })
@@ -106,10 +104,10 @@ function Table() {
         const locationarr = params.row.location
 
         return (
-          <ul key={params.row.id * 23}>
+          <ul key={Math.random() * 23000000}>
             {locationarr.map((obj: any) => {
               return (
-                <li key={params.row.id + "asdjbdas"}>
+                <li key={Math.random() * 1000000000000}>
                   <p>
                     <b>City: </b>
                     {obj.city} <b>State: </b>

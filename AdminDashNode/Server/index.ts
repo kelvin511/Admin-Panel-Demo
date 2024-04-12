@@ -65,6 +65,10 @@ app.post(
       req.body
 
     const image = req.file
+    let newData
+    if (typeof location[0] === typeof "khsdf") {
+      newData = JSON.parse(location)
+    }
 
     try {
       await items
@@ -76,7 +80,7 @@ app.post(
           price: price,
           stock: stock,
           image: image.originalname,
-          location: location,
+          location: newData,
         })
         .then(() => {
           res.status(201).json({ message: "Data Stored" })
@@ -94,10 +98,17 @@ app.patch(
   "/:id",
   upload.single("image"),
   async (req: Request, res: Response) => {
+    console.log(req)
     try {
       const id = req.params.id
+
       const { productid, productname, category, info, price, stock, location } =
         req.body
+
+      let newData
+      if (typeof location[0] === typeof "khsdf") {
+        newData = JSON.parse(location)
+      }
       const doc: any = await items.findById(id)
       doc.productid = productid
       doc.productname = productname
@@ -105,7 +116,7 @@ app.patch(
       doc.info = info
       doc.price = price
       doc.stock = stock
-      doc.location = location
+      doc.location = newData
 
       //@ts-ignore
       if (req.file) {
@@ -115,7 +126,7 @@ app.patch(
           doc.image = image.originalname
         }
       } else {
-        return
+        doc.image = doc.image
       }
       doc.save()
 

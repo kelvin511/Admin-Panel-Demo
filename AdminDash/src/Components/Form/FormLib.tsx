@@ -4,21 +4,17 @@
 // Light #8EA8C3
 // Lightest #CBF7ED
 
-import {
-  SubmitHandler,
-  useForm,
-  useFieldArray,
-  Controller,
-} from "react-hook-form"
-import Joi, { string } from "joi"
+import { SubmitHandler, useForm, useFieldArray } from "react-hook-form"
+
 import { joiResolver } from "@hookform/resolvers/joi"
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { serialize } from "object-to-formdata"
 import axios from "axios"
 import { ToastContainer, toast, Flip } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
 import { NavLink, useNavigate } from "react-router-dom"
 import { useLocation } from "react-router-dom"
+import Joi from "joi"
 
 //* JOI SCHEMA ///////////////////////////////////////////////////////////////
 const schema = Joi.object({
@@ -58,8 +54,6 @@ type FormFields = {
 function FormLib() {
   const [fileUrl, setFileUrl] = useState<any>() //* FILE URL TO PREVIEW
   const [imgError, setImgError] = useState<any>(false) //*image error for validation
-  const [locError, setLocError] = useState<any>([])
-  const [index1, setIndex1] = useState<any>([])
 
   const imageRef = useRef<any>(null)
   const previewRef = useRef<any>(null)
@@ -91,10 +85,6 @@ function FormLib() {
     control,
     name: "location",
   })
-
-  const locationDelete = useCallback(() => {
-    append({ city: "", state: "" })
-  }, [])
 
   useEffect(() => {
     if (location.state !== null && location) {
@@ -153,14 +143,14 @@ function FormLib() {
 
     setFileUrl(URL.createObjectURL(image))
   }
-  const sendData = async (data: FormFields) => {
-    //@ts-ignore
-
-    //@ts-ignore
-    const formData = data
+  const sendData = (data) => {
+    const formData = serialize({
+      ...data,
+      location: JSON.stringify(data.location),
+    })
 
     try {
-      await axios({
+      axios({
         method: location.state === null ? "post" : "patch",
         url:
           location.state === null
@@ -170,7 +160,7 @@ function FormLib() {
         headers: { "Content-Type": "multipart/form-data" },
       })
         .then(function (response) {
-          // setTimeout(() => navigate("/"), 2000)
+          setTimeout(() => navigate("/"), 2000)
           toast.success(`${response.data.message}`, {
             position: "bottom-right",
             autoClose: 2000,
@@ -209,14 +199,11 @@ function FormLib() {
   }
 
   const onSubmit: SubmitHandler<FormFields> = (data) => {
-    setLocError(errors.location)
     let isEmpty = false
-    const locationarr = data.location.forEach((obj: any) => {
+    data.location.forEach((obj: any) => {
       if (obj.city === "" || obj.state === "") isEmpty = true
     })
-    console.log(locationarr)
 
-    console.log(data)
     if (data.location.length > 0 && !isEmpty) {
       sendData(data)
       reset({
@@ -232,7 +219,7 @@ function FormLib() {
       imageRef.current.value = ""
       setFileUrl("")
     } else {
-      console.log(errors)
+      return
     }
   }
 
@@ -243,7 +230,6 @@ function FormLib() {
           encType="multipart/form-data"
           onSubmit={handleSubmit(onSubmit)}
           className="flex flex-col items-center gap-4"
-          // onSubmit={handleSubmit(onSubmit)}
         >
           <div className="flex flex-col w-1/2">
             <label className="mb-2" htmlFor="productid">
@@ -436,7 +422,7 @@ function FormLib() {
           <div className="flex justify-center mb-12 gap-14">
             {location.state === null ? (
               <button
-                // disabled={isSubmitting}
+                disabled={isSubmitting}
                 className="p-2 bg-[#161925] text-[#CBF7ED] rounded-lg"
                 type="submit"
               >
@@ -444,7 +430,7 @@ function FormLib() {
               </button>
             ) : (
               <button
-                // disabled={isSubmitting}
+                disabled={isSubmitting}
                 className="p-2 bg-[#161925] text-[#CBF7ED] rounded-lg"
                 type="submit"
               >
