@@ -20,6 +20,12 @@ import CircularProgress from "@mui/joy/CircularProgress"
 // console.log(formData)
 
 function Table() {
+  const [pageState, setPageState] = useState({
+    page: 0,
+    pageSize: 3,
+  })
+  const [tabelLoading, setTableLoading] = useState(false)
+  const [totalData, setTotalData] = useState(0)
   const [tableData, setTableData] = useState([])
   const [open, setOpen] = useState(false)
   const [row, setRow] = useState<any>()
@@ -36,22 +42,31 @@ function Table() {
   }
 
   useEffect(() => {
-    axios.get("http://localhost:3000").then((response: any) => {
-      const rowData = response.data
+    try {
+      ;(async () => {
+        const response = await axios.get(
+          `http://localhost:3000?page=${pageState.page}&pagesize=${pageState.pageSize}`
+        )
 
-      rowData.forEach((obj: any) => {
-        if ("_id" in obj) {
-          obj.id = obj._id
-          delete obj._id
-        }
-        if ("__v" in obj) {
-          delete obj.__v
-        }
-      })
+        const rowData = response.data.data
 
-      setTableData(rowData)
-    })
-  }, [open])
+        rowData.forEach((obj: any) => {
+          if ("_id" in obj) {
+            obj.id = obj._id
+            delete obj._id
+          }
+          if ("__v" in obj) {
+            delete obj.__v
+          }
+        })
+        setTotalData(response.data.total)
+        setTableData(rowData.slice().reverse())
+        setTableLoading(false)
+      })()
+    } catch (error) {
+      console.log(error)
+    }
+  }, [open, pageState])
 
   const handleEditClick = (row: any) => {
     navigate("/form", { state: row })
@@ -176,7 +191,21 @@ function Table() {
           }
         >
           <DataGrid
-            getCellClassName={() => `text-center`}
+            paginationMode="server"
+            paginationModel={{
+              pageSize: pageState.pageSize,
+              page: pageState.page,
+            }}
+            onPaginationModelChange={(model) => {
+              setPageState({
+                ...pageState,
+                page: model.page,
+                pageSize: model.pageSize,
+              })
+              setTableLoading(true)
+            }}
+            loading={tabelLoading}
+            rowCount={totalData}
             disableColumnSelector
             disableMultipleRowSelection
             disableRowSelectionOnClick
@@ -184,7 +213,6 @@ function Table() {
             rows={tableData as GridRowsProp}
             columns={columns}
             rowHeight={120}
-            sx={{}}
             initialState={{
               pagination: { paginationModel: { pageSize: 3 } },
             }}

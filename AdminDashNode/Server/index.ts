@@ -53,8 +53,13 @@ app.use(cors())
 
 app.use(bodyParser.urlencoded({ extended: false }))
 app.get("/", async (req: Request, res: Response) => {
+  const page = Number(req.query.page)
+  const pageSize = Number(req.query.pagesize)
+  console.log(page, pageSize)
+
   const data = await items.find()
-  res.status(200).json(data)
+  const newData = data.slice(page * 2 - 2, pageSize * page + pageSize)
+  res.status(200).json({ data: newData, total: data.length })
   // console.log(data)
 })
 app.post(
