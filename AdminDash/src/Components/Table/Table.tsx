@@ -24,6 +24,7 @@ function Table() {
     page: 0,
     pageSize: 3,
   })
+  const [mainError, setMainError] = useState(false)
   const [tabelLoading, setTableLoading] = useState(false)
   const [totalData, setTotalData] = useState(0)
   const [tableData, setTableData] = useState([])
@@ -42,8 +43,10 @@ function Table() {
   }
 
   useEffect(() => {
-    try {
-      ;(async () => {
+    setTableLoading(true)
+    ;(async () => {
+      try {
+        setMainError(false)
         const response = await axios.get(
           `http://localhost:3000?page=${pageState.page}&pagesize=${pageState.pageSize}`
         )
@@ -62,10 +65,12 @@ function Table() {
         setTotalData(response.data.total)
         setTableData(rowData)
         setTableLoading(false)
-      })()
-    } catch (error) {
-      console.log(error)
-    }
+        setMainError(false)
+      } catch (error) {
+        setMainError(true)
+        console.log(error)
+      }
+    })()
   }, [open, pageState])
 
   const handleEditClick = (row: any) => {
@@ -187,36 +192,44 @@ function Table() {
         </NavLink>
       </div>
 
-      <div className=" bg-[#8EA8C3] flex flex-col !items-center !justify-center mx-auto !text-center w-[70%]  ">
-        <DataGrid
-          paginationMode="server"
-          paginationModel={{
-            pageSize: pageState.pageSize,
-            page: pageState.page,
-          }}
-          onPaginationModelChange={(model) => {
-            setPageState({
-              ...pageState,
-              page: model.page,
-              pageSize: model.pageSize,
-            })
-            setTableLoading(true)
-          }}
-          loading={tabelLoading}
-          rowCount={totalData}
-          disableColumnSelector
-          disableMultipleRowSelection
-          disableRowSelectionOnClick
-          className="!bg-[#8EA8C3] !text-[17px]   !flex !justify-center !mx-auto !text-[#23395B] w-full "
-          rows={tableData as GridRowsProp}
-          columns={columns}
-          rowHeight={120}
-          initialState={{
-            pagination: { paginationModel: { pageSize: 3 } },
-          }}
-          pageSizeOptions={[3, 5, 10]}
-        />
-      </div>
+      <Suspense fallback={<CircularProgress>Loading</CircularProgress>}>
+        {!mainError ? (
+          <div className=" bg-[#8EA8C3] flex flex-col !items-center !justify-center mx-auto !text-center w-[70%]  ">
+            <DataGrid
+              paginationMode="server"
+              paginationModel={{
+                pageSize: pageState.pageSize,
+                page: pageState.page,
+              }}
+              onPaginationModelChange={(model) => {
+                setPageState({
+                  ...pageState,
+                  page: model.page,
+                  pageSize: model.pageSize,
+                })
+                setTableLoading(true)
+              }}
+              loading={tabelLoading}
+              rowCount={totalData}
+              disableColumnSelector
+              disableMultipleRowSelection
+              disableRowSelectionOnClick
+              className="!bg-[#8EA8C3] !text-[17px]   !flex !justify-center !mx-auto !text-[#23395B] w-full "
+              rows={tableData as GridRowsProp}
+              columns={columns}
+              rowHeight={120}
+              initialState={{
+                pagination: { paginationModel: { pageSize: 3 } },
+              }}
+              pageSizeOptions={[3, 5, 10]}
+            />
+          </div>
+        ) : (
+          <div className="flex justify-center text-center">
+            <span className="text-[44px] text-red-500  ">Error Occured</span>
+          </div>
+        )}
+      </Suspense>
     </div>
   )
 }
