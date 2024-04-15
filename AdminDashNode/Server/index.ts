@@ -55,11 +55,17 @@ app.use(bodyParser.urlencoded({ extended: false }))
 app.get("/", async (req: Request, res: Response) => {
   const page = Number(req.query.page)
   const pageSize = Number(req.query.pagesize)
-  console.log(page, pageSize)
 
-  const data = await items.find().sort({ _id: -1 })
-  const newData = data.slice(page * pageSize, pageSize * page + pageSize)
-  res.status(200).json({ data: newData, total: data.length })
+  const length = await items.countDocuments()
+
+  const newdata = await items
+    .find()
+    .sort({ _id: -1 })
+    .skip(page * pageSize)
+    .limit(pageSize)
+
+  res.status(200).json({ data: newdata, total: length })
+
   // console.log(data)
 })
 app.post(
@@ -103,7 +109,6 @@ app.patch(
   "/:id",
   upload.single("image"),
   async (req: Request, res: Response) => {
-    console.log(req)
     try {
       const id = req.params.id
 
@@ -155,8 +160,7 @@ app.delete("/:id", async (req: Request, res: Response) => {
       res.status(204).json({ message: "Data Deleted" })
     })
   } catch (error) {
-    res.status(500).json({ message: "Internal Server Error" })
-    console.log(error)
+    res.status(500).json({ message: `Server responded ${error}` })
   }
 })
 connectDB().then(

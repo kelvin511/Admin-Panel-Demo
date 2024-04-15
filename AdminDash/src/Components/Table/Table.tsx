@@ -83,17 +83,18 @@ function Table() {
   }
 
   const columns: GridColDef[] = [
-    { field: "productid", headerName: "Product Id" },
-    { field: "productname", headerName: "Product Name", width: 120 },
-    { field: "category", headerName: "Category" },
-    { field: "info", headerName: "Information" },
-    { field: "price", headerName: "Price" },
+    { field: "productid", headerName: "Product Id", width: 120 },
+    { field: "productname", headerName: "Product Name", width: 150 },
+    { field: "category", headerName: "Category", width: 120 },
+    { field: "info", headerName: "Information", width: 120 },
+    { field: "price", headerName: "Price", width: 120 },
 
     {
       field: "stock",
       headerName: "Stock",
     },
     {
+      minWidth: 180,
       field: "image",
       headerName: "Image",
       display: "flex",
@@ -114,7 +115,7 @@ function Table() {
       display: "flex",
       minWidth: 280,
       field: "location",
-      headerName: "Loaction",
+      headerName: "Location",
       renderCell: (params) => {
         const locationarr = params.row.location
 
@@ -177,48 +178,44 @@ function Table() {
       <h1 className="font-serif text-5xl font-extrabold text-center hover:text-green-400">
         Admin Panel
       </h1>
-
-      <div className="flex flex-col items-center justify-center mx-auto mt-10 text-center ">
+      <div className="flex">
         <NavLink
-          className="px-4 py-2 mb-10 yyy rounded-[12px] bg-[#CBF7ED] text-xl text-[#23395B] flex-2"
+          className="px-4 py-2 mb-10 mx-auto my-10 rounded-[12px] bg-[#CBF7ED] text-xl text-[#23395B] "
           to="/form"
         >
           Add
         </NavLink>
-        <Suspense
-          fallback={
-            <CircularProgress color="primary" size="lg" variant="plain" />
-          }
-        >
-          <DataGrid
-            paginationMode="server"
-            paginationModel={{
-              pageSize: pageState.pageSize,
-              page: pageState.page,
-            }}
-            onPaginationModelChange={(model) => {
-              setPageState({
-                ...pageState,
-                page: model.page,
-                pageSize: model.pageSize,
-              })
-              setTableLoading(true)
-            }}
-            loading={tabelLoading}
-            rowCount={totalData}
-            disableColumnSelector
-            disableMultipleRowSelection
-            disableRowSelectionOnClick
-            className="bg-[#8EA8C3] p-6  flex justify-center mx-auto !text-[#23395B] "
-            rows={tableData as GridRowsProp}
-            columns={columns}
-            rowHeight={120}
-            initialState={{
-              pagination: { paginationModel: { pageSize: 3 } },
-            }}
-            pageSizeOptions={[3, 5, 10]}
-          />
-        </Suspense>
+      </div>
+
+      <div className=" bg-[#8EA8C3] flex flex-col !items-center !justify-center mx-auto !text-center w-[70%]  ">
+        <DataGrid
+          paginationMode="server"
+          paginationModel={{
+            pageSize: pageState.pageSize,
+            page: pageState.page,
+          }}
+          onPaginationModelChange={(model) => {
+            setPageState({
+              ...pageState,
+              page: model.page,
+              pageSize: model.pageSize,
+            })
+            setTableLoading(true)
+          }}
+          loading={tabelLoading}
+          rowCount={totalData}
+          disableColumnSelector
+          disableMultipleRowSelection
+          disableRowSelectionOnClick
+          className="!bg-[#8EA8C3] !text-[17px]   !flex !justify-center !mx-auto !text-[#23395B] w-full "
+          rows={tableData as GridRowsProp}
+          columns={columns}
+          rowHeight={120}
+          initialState={{
+            pagination: { paginationModel: { pageSize: 3 } },
+          }}
+          pageSizeOptions={[3, 5, 10]}
+        />
       </div>
     </div>
   )
