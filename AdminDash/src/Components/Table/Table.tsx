@@ -60,7 +60,7 @@ function Table() {
           }
         })
         setTotalData(response.data.total)
-        setTableData(rowData.slice().reverse())
+        setTableData(rowData)
         setTableLoading(false)
       })()
     } catch (error) {

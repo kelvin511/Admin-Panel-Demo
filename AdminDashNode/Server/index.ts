@@ -57,8 +57,8 @@ app.get("/", async (req: Request, res: Response) => {
   const pageSize = Number(req.query.pagesize)
   console.log(page, pageSize)
 
-  const data = await items.find()
-  const newData = data.slice(page * 2 - 2, pageSize * page + pageSize)
+  const data = await items.find().sort({ _id: -1 })
+  const newData = data.slice(page * pageSize, pageSize * page + pageSize)
   res.status(200).json({ data: newData, total: data.length })
   // console.log(data)
 })
